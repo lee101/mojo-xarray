@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mojo-xarray"
+version = "0.1.0"
+description = "xarray's labelled-array reductions and rolling windows, in Mojo"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+dependencies = ["numpy>=1.26", "xarray>=2024.1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["python/mojo_xarray"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

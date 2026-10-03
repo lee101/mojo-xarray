@@ -7,14 +7,21 @@ version = "0.1.0"
 
 [tasks]
 build = "bash build/build.sh"
-test = "python -m pytest tests -q"
+# Single-threaded BLAS: parity assertions are thread-count independent and the
+# cap keeps `import numpy` from exhausting a tight pids cgroup.
+test = { cmd = "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m pytest tests -q", description = "pytest parity suite" }
 bench = "flock /tmp/mojo-bench.lock python bench/bench.py"
 
 [activation.env]
 PYTHONPATH = "python"
 
 [dependencies]
-mojo = "==1.2.0.dev2026092605"
+numpy = "*"
+mojo = "==1.2.0.dev2026092905"
+max = "==26.7.0.dev2026092905"
 python = "3.13.*"
 pytest = "*"
-numpy = "*"
+xarray = "*"
+dask = "*"
+pandas = "*"
+netcdf4 = "*"
