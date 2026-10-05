@@ -10,7 +10,7 @@ build = "bash build/build.sh"
 # Single-threaded BLAS: parity assertions are thread-count independent and the
 # cap keeps `import numpy` from exhausting a tight pids cgroup.
 test = { cmd = "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m pytest tests -q", description = "pytest parity suite" }
-bench = "flock /tmp/mojo-bench.lock python bench/bench.py"
+bench = { cmd = "OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 flock /tmp/mojo-bench.lock python bench/bench.py", description = "benchmark vs upstream" }
 
 [activation.env]
 PYTHONPATH = "python"

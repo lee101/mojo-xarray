@@ -186,66 +186,65 @@ takes the materialised-window path -- the same default a `pip install xarray`
 gives you.
 
 The load average is printed with the table because it is the single biggest
-caveat. The run below was taken at load 71.8 on a 72-core host: there were
-essentially no idle cores, so the `parallelize` kernels were competing with the
-rest of the machine for all 16 of their threads. That is why the rolling rows
-below are single-digit multiples where an idle host would show tens. The
-xarray column moves too, so the ratios are the stable quantity and the absolute
-milliseconds are the ones to discount.
+caveat. The run below was taken at load 36.6 on a 72-core host: half the
+machine was busy, so the `parallelize` kernels were still competing with
+the rest of the machine for all 16 of their threads, though less severely than a
+saturated host would force. The xarray column moves too, so the ratios are the
+stable quantity and the absolute milliseconds are the ones to discount.
 
 ```
 mojo-xarray vs xarray 2026.7.0
 machine: Intel(R) Xeon(R) CPU E5-2697 v4 @ 2.30GHz (72 cores), kernel 6.8.0-142-generic
 python 3.13.14, numpy 2.5.1
-load average during the run: 71.8 on 72 cores; the host is shared, so this bounds how clean the numbers are
+load average during the run: 36.6 on 72 cores; the host is shared, so this bounds how clean the numbers are
 
 | case                               |       mojo |     xarray |  speedup | ok |
 |------------------------------------|------------|------------|----------|-----|
-| reduce 2M f64  sum                 |     0.86 ms |    21.61 ms |   25.08x | yes |
-| reduce 2M f64  mean                |     3.65 ms |    12.57 ms |    3.44x | yes |
-| reduce 2M f64  min                 |     0.65 ms |     0.68 ms |    1.03x | yes |
-| reduce 2M f64  max                 |     0.67 ms |     0.70 ms |    1.04x | yes |
-| reduce 2M f64  std                 |     4.31 ms |    21.48 ms |    4.99x | yes |
-| reduce 2M f64  var                 |     4.32 ms |    22.41 ms |    5.18x | yes |
-| reduce 2M f64  prod                |     3.80 ms |    11.82 ms |    3.11x | yes |
-| reduce 500K f64 median             |     9.67 ms |     7.96 ms |    0.82x | yes |
-| nputils 2M f64 nanfirst            |     0.61 ms |     0.76 ms |    1.26x | yes |
-| nputils 2M f64 nanlast             |     2.54 ms |     4.31 ms |    1.70x | yes |
-| reduce 64x1024 axis=1 sum          |     0.15 ms |     0.52 ms |    3.38x | yes |
-| reduce 64x1024 axis=1 mean         |     0.30 ms |     0.52 ms |    1.70x | yes |
-| reduce 64x1024 axis=1 min          |     0.19 ms |     0.23 ms |    1.23x | yes |
-| reduce 64x1024 axis=1 max          |     0.18 ms |     0.19 ms |    1.09x | yes |
-| reduce 64x1024 axis=1 std          |     0.35 ms |     1.01 ms |    2.90x | yes |
-| reduce 64x1024 axis=1 var          |     0.38 ms |     0.96 ms |    2.51x | yes |
-| reduce 64x1024 axis=1 median       |     1.17 ms |     3.71 ms |    3.17x | yes |
-| rolling w=64  sum                  |     9.96 ms |    37.80 ms |    3.80x | yes |
-| rolling w=64  mean                 |     9.30 ms |    56.04 ms |    6.02x | yes |
-| rolling w=64  min                  |     9.45 ms |    43.44 ms |    4.60x | yes |
-| rolling w=64  max                  |     9.66 ms |    43.79 ms |    4.53x | yes |
-| rolling w=64  std                  |    11.97 ms |   312.86 ms |   26.15x | yes |
-| rolling w=64  var                  |    13.12 ms |   301.49 ms |   22.98x | yes |
-| rolling w=64  median               |    31.94 ms |   878.68 ms |   27.51x | yes |
-| rolling w=64  count                |    10.18 ms |    22.58 ms |    2.22x | yes |
-| rolling w=8     mean               |     8.17 ms |    33.82 ms |    4.14x | yes |
-| rolling w=256   mean               |    19.32 ms |   158.73 ms |    8.21x | yes |
-| rolling w=512   mean               |    33.19 ms |   286.34 ms |    8.63x | yes |
-| rolling 16x2048 w=32 median        |    18.40 ms |    44.75 ms |    2.43x | yes |
-| rolling axis=0 w=64 mean           |     5.11 ms |    12.64 ms |    2.48x | yes |
-| rolling construct w=64             |     0.37 ms |     0.49 ms |    1.35x | yes |
-| coarsen 2 mean                     |     0.51 ms |     1.71 ms |    3.34x | yes |
-| coarsen 64 std                     |     0.29 ms |     0.86 ms |    2.99x | yes |
-| nanquantile q=0.1 axis=1 (vs np)   |     1.93 ms |    14.25 ms |    7.37x | yes |
-| nanquantile q=0.5 axis=1 (vs np)   |     2.18 ms |    14.02 ms |    6.44x | yes |
-| nanquantile q=0.9 axis=1 (vs np)   |     1.81 ms |    13.78 ms |    7.63x | yes |
-| Dataset 4x64x1024 sum              |     0.60 ms |     1.61 ms |    2.70x | yes |
-| Dataset 4x64x1024 mean             |     0.93 ms |     1.72 ms |    1.85x | yes |
-| Dataset 4x64x1024 min              |     0.55 ms |     0.57 ms |    1.04x | yes |
-| Dataset 4x64x1024 max              |     0.54 ms |     0.58 ms |    1.06x | yes |
-| Dataset 4x64x1024 std              |     1.07 ms |     3.10 ms |    2.89x | yes |
-| Dataset 4x64x1024 var              |     1.05 ms |     3.15 ms |    3.01x | yes |
-| Dataset 4x64x1024 median           |     4.79 ms |    17.51 ms |    3.65x | yes |
-| Dataset 4x64x1024 argmin           |     1.08 ms |     1.39 ms |    1.29x | yes |
-| Dataset 4x64x1024 rolling w=64 sum |    36.63 ms |    46.16 ms |    1.26x | yes |
+| reduce 2M f64  sum                 |     1.18 ms |    22.79 ms |   19.25x | yes |
+| reduce 2M f64  mean                |     4.11 ms |    13.43 ms |    3.27x | yes |
+| reduce 2M f64  min                 |     0.74 ms |     0.74 ms |    1.01x | yes |
+| reduce 2M f64  max                 |     0.88 ms |     0.92 ms |    1.04x | yes |
+| reduce 2M f64  std                 |     5.04 ms |    23.27 ms |    4.62x | yes |
+| reduce 2M f64  var                 |     5.81 ms |    25.71 ms |    4.42x | yes |
+| reduce 2M f64  prod                |     4.29 ms |    12.12 ms |    2.82x | yes |
+| reduce 500K f64 median             |     9.53 ms |     7.69 ms |    0.81x | yes |
+| nputils 2M f64 nanfirst            |     0.70 ms |     1.16 ms |    1.67x | yes |
+| nputils 2M f64 nanlast             |     3.62 ms |     3.16 ms |    0.87x | yes |
+| reduce 64x1024 axis=1 sum          |     0.14 ms |     0.39 ms |    2.77x | yes |
+| reduce 64x1024 axis=1 mean         |     0.23 ms |     0.43 ms |    1.83x | yes |
+| reduce 64x1024 axis=1 min          |     0.15 ms |     0.14 ms |    0.96x | yes |
+| reduce 64x1024 axis=1 max          |     0.14 ms |     0.15 ms |    1.05x | yes |
+| reduce 64x1024 axis=1 std          |     0.26 ms |     0.76 ms |    2.98x | yes |
+| reduce 64x1024 axis=1 var          |     0.30 ms |     0.83 ms |    2.80x | yes |
+| reduce 64x1024 axis=1 median       |     1.18 ms |     3.81 ms |    3.22x | yes |
+| rolling w=64  sum                  |    10.97 ms |    36.53 ms |    3.33x | yes |
+| rolling w=64  mean                 |    13.52 ms |    66.38 ms |    4.91x | yes |
+| rolling w=64  min                  |    10.42 ms |    43.20 ms |    4.14x | yes |
+| rolling w=64  max                  |    11.97 ms |    42.77 ms |    3.57x | yes |
+| rolling w=64  std                  |    15.99 ms |   393.59 ms |   24.62x | yes |
+| rolling w=64  var                  |    14.11 ms |   400.37 ms |   28.37x | yes |
+| rolling w=64  median               |    40.36 ms |  1279.78 ms |   31.71x | yes |
+| rolling w=64  count                |    12.47 ms |    20.58 ms |    1.65x | yes |
+| rolling w=8     mean               |     8.37 ms |    33.41 ms |    3.99x | yes |
+| rolling w=256   mean               |    21.22 ms |   154.46 ms |    7.28x | yes |
+| rolling w=512   mean               |    34.12 ms |   283.11 ms |    8.30x | yes |
+| rolling 16x2048 w=32 median        |    18.17 ms |    45.78 ms |    2.52x | yes |
+| rolling axis=0 w=64 mean           |     5.33 ms |    13.91 ms |    2.61x | yes |
+| rolling construct w=64             |     0.34 ms |     0.51 ms |    1.48x | yes |
+| coarsen 2 mean                     |     0.53 ms |     1.71 ms |    3.23x | yes |
+| coarsen 64 std                     |     0.27 ms |     0.87 ms |    3.20x | yes |
+| nanquantile q=0.1 axis=1 (vs np)   |     1.99 ms |    12.66 ms |    6.35x | yes |
+| nanquantile q=0.5 axis=1 (vs np)   |     2.25 ms |    11.92 ms |    5.31x | yes |
+| nanquantile q=0.9 axis=1 (vs np)   |     1.84 ms |    12.23 ms |    6.64x | yes |
+| Dataset 4x64x1024 sum              |     0.55 ms |     1.50 ms |    2.73x | yes |
+| Dataset 4x64x1024 mean             |     0.87 ms |     1.63 ms |    1.88x | yes |
+| Dataset 4x64x1024 min              |     0.48 ms |     0.51 ms |    1.07x | yes |
+| Dataset 4x64x1024 max              |     0.48 ms |     0.52 ms |    1.08x | yes |
+| Dataset 4x64x1024 std              |     1.00 ms |     3.03 ms |    3.02x | yes |
+| Dataset 4x64x1024 var              |     1.09 ms |     3.16 ms |    2.91x | yes |
+| Dataset 4x64x1024 median           |     4.71 ms |    18.11 ms |    3.84x | yes |
+| Dataset 4x64x1024 argmin           |     1.03 ms |     1.37 ms |    1.33x | yes |
+| Dataset 4x64x1024 rolling w=64 sum |    43.32 ms |    50.85 ms |    1.17x | yes |
 ```
 
 ### What the table says
@@ -280,28 +279,29 @@ the input row, another fill band -- rather than re-deriving an index per element
 
 Where Mojo is slower than upstream, plainly:
 
-- **`median` of a whole column: 0.82x.** The one row genuinely below parity on
-  an idle host as well as a busy one. Upstream reaches `np.nanmedian`, which is
+- **`median` of a whole column: 0.81x.** The one row genuinely below parity on
+  an idle host as well as a busy one, and it has been measured between 0.76x and
+  0.82x across the runs taken here. Upstream reaches `np.nanmedian`, which is
   introselect -- O(n) with a much better constant than a Lomuto-partitioned
   quickselect, whose inner comparison is a coin flip the branch predictor cannot
   learn. Closing the rest means a branchless partition, and this dialect has no
   `select` on `SIMD` and no way to turn a `SIMD[DType.bool]` into numbers, so
   the branchless form would have to be hand-written on scalar selects. The
   *rolling* median, where there are many independent output elements to stripe
-  across threads, is 27x faster than upstream on the same data.
-- **`min`/`max` on a 2M column: 1.03-1.04x**, i.e. parity, and it has been
-  between 0.88x and 1.04x across the runs taken here. Both sides stream 16 MB
-  out of DRAM and NumPy's are SIMD too, so there is a few percent either way and
-  no structural win available on a 1-flop-per-byte reduction. The strided
-  `axis=1` rows of the same two operations are consistently ahead
-  (1.09-1.23x) because there the kernel keeps a scalar loop and upstream is not
+  across threads, is 32x faster than upstream on the same data.
+- **`min`/`max` on a 2M column: 1.01x and 1.04x**, i.e. parity,
+  and it has been between 0.88x and 1.04x across the runs taken here. Both sides
+  stream 16 MB out of DRAM and NumPy's are SIMD too, so there is a few percent
+  either way and no structural win available on a 1-flop-per-byte reduction.
+  The strided `axis=1` rows of the same two operations sit either side of
+  parity (0.96-1.05x) because there the kernel keeps a scalar loop and upstream is not
   the one that can vectorise.
-- **`Dataset ... rolling w=64 sum` at 1.26x**, the weakest rolling row. Four
+- **`Dataset ... rolling w=64 sum` at 1.18x**, the weakest rolling row. Four
   variables of 64x1024 means four `DataArrayRolling` objects, each of which
   builds its own `_is_movable` decision and moves its own axes; the reduction
-  itself is the same `mx_move_sum` that is 3.80x on the single-array row. This
+  itself is the same `mx_move_sum` that is 3.33x on the single-array row. This
   row is dominated by per-variable Python overhead, not by the kernel.
-- **`mean` (3.1-3.4x) and `prod` (3.11x) on the same column.** Both need
+- **`mean` (3.3x) and `prod` (2.8x) on the same column.** Both need
   something the vector form cannot carry. `mean` needs the count of non-NaN
   observations, and this dialect has no lane-wise NaN mask to count with:
   `SIMD[DType.bool]` cannot be cast to numbers, `min`/`max` send a NaN to
@@ -310,9 +310,9 @@ Where Mojo is slower than upstream, plainly:
   sentinel-based mask would swallow. `prod` has the same shape of problem in
   reverse -- a NaN has to become 1, not 0. `var`/`std` only need the count in
   their *first* pass, so their second pass -- the one that reads the data -- is
-  vectorised, which is why they come out ahead of `mean` (5.0-5.2x) on the
+  vectorised, which is why they come out ahead of `mean` (4.4-4.6x) on the
   identical column.
-- **`rolling construct` (1.35x) and `coarsen` (3.0-3.3x).** Both are
+- **`rolling construct` (1.48x) and `coarsen` (3.2x).** Both are
   allocation-bound: the kernel is a fraction of the call.
 
 ### What was tried and thrown away
